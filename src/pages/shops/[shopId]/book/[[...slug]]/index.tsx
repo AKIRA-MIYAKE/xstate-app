@@ -92,7 +92,7 @@ const BookPage: NextPageWithLayout<PageProps> = ({ shopId }) => {
       })
     }
 
-    router.replace(`/shops/${shop.id}/book`, undefined, { shallow: true })
+    router.replace(`/shops/${shop.id}/book`)
   }, [shop, menuId, state, send]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -100,29 +100,19 @@ const BookPage: NextPageWithLayout<PageProps> = ({ shopId }) => {
 
     switch (true) {
       case state.matches('selectingMenu'):
-        router.replace(`/shops/${shopId}/book/menus`, undefined, {
-          shallow: true,
-        })
+        router.replace(`/shops/${shopId}/book/menus`)
         break
       case state.matches('selectingDateTime'):
-        router.replace(`/shops/${shopId}/book/date-time`, undefined, {
-          shallow: true,
-        })
+        router.replace(`/shops/${shopId}/book/date-time`)
         break
       case state.matches('enteringUserInfo'):
-        router.replace(`/shops/${shopId}/book/user-info`, undefined, {
-          shallow: true,
-        })
+        router.replace(`/shops/${shopId}/book/user-info`)
         break
       case state.matches('confirming'):
-        router.replace(`/shops/${shopId}/book/confirm`, undefined, {
-          shallow: true,
-        })
+        router.replace(`/shops/${shopId}/book/confirm`)
         break
       case state.matches('complete'):
-        router.replace(`/shops/${shopId}/book/complete`, undefined, {
-          shallow: true,
-        })
+        router.replace(`/shops/${shopId}/book/complete`)
         break
     }
   }, [shopId, menuId, state]) // eslint-disable-line react-hooks/exhaustive-deps
