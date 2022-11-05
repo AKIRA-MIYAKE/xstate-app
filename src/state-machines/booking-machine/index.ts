@@ -48,6 +48,9 @@ export type BookingMachineEvent =
       type: 'REQUIRE_SIGN_IN'
     }
   | {
+      type: 'REQUIRE_ENTER_USER_INFO'
+    }
+  | {
       type: 'SUBMIT'
     }
 
@@ -254,6 +257,9 @@ export const bookingMachine = createMachine<
               },
             ],
             on: {
+              REQUIRE_ENTER_USER_INFO: {
+                target: 'entering',
+              },
               BACK: {
                 target: '#bookingMachine.selectingDateTime',
               },
