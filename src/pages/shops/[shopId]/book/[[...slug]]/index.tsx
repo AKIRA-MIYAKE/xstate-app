@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
 import type { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { useActor } from '@xstate/react'
@@ -19,7 +19,6 @@ import { CompleteTemplate } from '../../../../../templates/shops/book/CompleteTe
 
 interface PageProps {
   shopId: string
-  menuId: string | null
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (
@@ -33,24 +32,26 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     }
   }
 
-  const menuId = context.query && context.query['menuId']
-
-  if (typeof menuId !== 'undefined' && typeof menuId !== 'string') {
-    return {
-      notFound: true,
-    }
-  }
-
   return {
     props: {
       shopId,
-      menuId: menuId || null,
     },
   }
 }
 
-const BookPage: NextPageWithLayout<PageProps> = ({ shopId, menuId }) => {
+const BookPage: NextPageWithLayout<PageProps> = ({ shopId }) => {
   const router = useRouter()
+  const { query } = router
+
+  const menuId = useMemo(() => {
+    const menuId = query['menuId']
+
+    if (typeof menuId !== 'undefined' && typeof menuId !== 'string') {
+      throw new Error('Something wrong')
+    }
+
+    return menuId
+  }, [query])
 
   const { user } = useAuthContext()
   const { bookingService } = useBookingServiceContext()
@@ -78,19 +79,53 @@ const BookPage: NextPageWithLayout<PageProps> = ({ shopId, menuId }) => {
   }, [send, shop])
 
   useEffect(() => {
+    if (!shop || !menuId) return
     if (!state.matches('selectingMenu')) return
-    if (!menuId) return
 
-    send({
-      type: 'SELECT_MENU',
-      payload: { menuId },
-    })
-    send({
-      type: 'NEXT',
-    })
+    if (shop.menus.some((menu) => menu.id === menuId)) {
+      send({
+        type: 'SELECT_MENU',
+        payload: { menuId },
+      })
+      send({
+        type: 'NEXT',
+      })
+    }
 
-    router.replace(`/shops/${shopId}/book`, undefined, { shallow: true })
-  }, [shopId, menuId, state, send]) // eslint-disable-line react-hooks/exhaustive-deps
+    router.replace(`/shops/${shop.id}/book`, undefined, { shallow: true })
+  }, [shop, menuId, state, send]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (menuId) return
+
+    switch (true) {
+      case state.matches('selectingMenu'):
+        router.replace(`/shops/${shopId}/book/menus`, undefined, {
+          shallow: true,
+        })
+        break
+      case state.matches('selectingDateTime'):
+        router.replace(`/shops/${shopId}/book/date-time`, undefined, {
+          shallow: true,
+        })
+        break
+      case state.matches('enteringUserInfo'):
+        router.replace(`/shops/${shopId}/book/user-info`, undefined, {
+          shallow: true,
+        })
+        break
+      case state.matches('confirming'):
+        router.replace(`/shops/${shopId}/book/confirm`, undefined, {
+          shallow: true,
+        })
+        break
+      case state.matches('complete'):
+        router.replace(`/shops/${shopId}/book/complete`, undefined, {
+          shallow: true,
+        })
+        break
+    }
+  }, [shopId, menuId, state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) {
     throw error
