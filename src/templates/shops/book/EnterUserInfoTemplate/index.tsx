@@ -2,6 +2,7 @@ import type { FC, ChangeEventHandler } from 'react'
 import { useState, useCallback, useEffect } from 'react'
 import { useActor } from '@xstate/react'
 
+import { canTransitFromEnteringToCompleteOnEnteringUserInfo } from '../../../../state-machines/booking-machine'
 import { useBookingServiceContext } from '../../../../contexts/BookingServiceContext'
 
 export const EnterUserInfoTemplate: FC = () => {
@@ -104,7 +105,14 @@ export const EnterUserInfoTemplate: FC = () => {
         </div>
       </div>
       <div>
-        <button onClick={onNextButtonClick}>Next</button>
+        <button
+          onClick={onNextButtonClick}
+          disabled={
+            !canTransitFromEnteringToCompleteOnEnteringUserInfo(state.context)
+          }
+        >
+          Next
+        </button>
       </div>
     </>
   )

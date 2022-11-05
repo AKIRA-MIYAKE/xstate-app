@@ -2,6 +2,7 @@ import type { FC, ChangeEventHandler } from 'react'
 import { useCallback } from 'react'
 import { useActor } from '@xstate/react'
 
+import { canTransitFromSelectingToCompleteOnSelectingDateTime } from '../../../../state-machines/booking-machine'
 import { useBookingServiceContext } from '../../../../contexts/BookingServiceContext'
 
 export const SelectDateTimeTemplate: FC = () => {
@@ -39,7 +40,14 @@ export const SelectDateTimeTemplate: FC = () => {
         />
       </div>
       <div>
-        <button onClick={onNextButtonClick}>Next</button>
+        <button
+          onClick={onNextButtonClick}
+          disabled={
+            !canTransitFromSelectingToCompleteOnSelectingDateTime(state.context)
+          }
+        >
+          Next
+        </button>
       </div>
     </>
   )

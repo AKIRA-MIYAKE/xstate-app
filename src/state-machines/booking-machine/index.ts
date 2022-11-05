@@ -1,7 +1,8 @@
-import { type } from 'os'
 import { createMachine, assign } from 'xstate'
+import dayjs from 'dayjs'
 
 import type { Shop, User } from '../../interfaces'
+import { sleep } from '../../libs/sleep'
 
 export interface BookingMachineContext {
   data: {
@@ -50,6 +51,71 @@ export type BookingMachineEvent =
       type: 'SUBMIT'
     }
 
+export const submit: (context: BookingMachineContext) => Promise<void> = async (
+  context
+) => {
+  const dateTime = dayjs(context.input.dateTime)
+
+  if (dateTime.isBefore(dayjs().add(1, 'days'))) {
+    throw new Error('This is a date that cannot be reserved.')
+  }
+
+  return
+}
+
+export const canTransitIdleToCompleteOnIdle: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.data.shop !== 'undefined'
+}
+
+export const canTransitFromSelectingToCompleteOnSelectingMenu: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.input.menuId !== 'undefined'
+}
+
+export const canTransitFromSelectingToCompleteOnSelectingDateTime: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.input.dateTime !== 'undefined'
+}
+
+export const canTransitFromIdleToEnteringOnEnteringUserInfo: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.data.user === 'undefined'
+}
+
+export const canTransitFromIdleToConfirmingCurrentUserOnEnteringUserInfo: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.data.user !== 'undefined'
+}
+
+export const canTransitFromEnteringToCompleteOnEnteringUserInfo: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return (
+    typeof context.input.userInfo !== 'undefined' &&
+    /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(context.input.userInfo.email) &&
+    context.input.userInfo.name.length > 0 &&
+    context.input.userInfo.phone.length > 0
+  )
+}
+
+export const canTransitFromSigningInToConfirmingCurrentUserOnEnteringUserInfo: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.data.user !== 'undefined'
+}
+
+export const canTransitFromConfirmingCurrentUserOnEnteringUserInfo: (
+  context: BookingMachineContext
+) => boolean = (context) => {
+  return typeof context.data.user !== 'undefined'
+}
+
 export const bookingMachine = createMachine<
   BookingMachineContext,
   BookingMachineEvent
@@ -73,9 +139,7 @@ export const bookingMachine = createMachine<
             always: [
               {
                 target: 'complete',
-                cond: (context) => {
-                  return typeof context.data.shop !== 'undefined'
-                },
+                cond: 'canTransitIdleToCompleteOnIdle',
               },
             ],
           },
@@ -91,15 +155,20 @@ export const bookingMachine = createMachine<
         },
         states: {
           idle: {
+            always: [
+              {
+                target: 'selecting',
+              },
+            ],
+          },
+          selecting: {
             on: {
               SELECT_MENU: {
                 actions: ['assignInputMenuId'],
               },
               NEXT: {
                 target: 'complete',
-                cond: (context) => {
-                  return typeof context.input.menuId !== 'undefined'
-                },
+                cond: 'canTransitFromSelectingToCompleteOnSelectingMenu',
               },
             },
           },
@@ -115,15 +184,20 @@ export const bookingMachine = createMachine<
         },
         states: {
           idle: {
+            always: [
+              {
+                target: 'selecting',
+              },
+            ],
+          },
+          selecting: {
             on: {
               SELECT_DATE_TIME: {
                 actions: ['assignInputDateTime'],
               },
               NEXT: {
                 target: 'complete',
-                cond: (context) => {
-                  return typeof context.input.dateTime !== 'undefined'
-                },
+                cond: 'canTransitFromSelectingToCompleteOnSelectingDateTime',
               },
               BACK: {
                 target: '#bookingMachine.selectingMenu',
@@ -144,12 +218,16 @@ export const bookingMachine = createMachine<
           idle: {
             always: [
               {
+                target: 'entering',
+                cond: 'canTransitFromIdleToEnteringOnEnteringUserInfo',
+              },
+              {
                 target: 'confirmingCurrentUser',
-                cond: (context) => {
-                  return typeof context.data.user !== 'undefined'
-                },
+                cond: 'canTransitFromIdleToConfirmingCurrentUserOnEnteringUserInfo',
               },
             ],
+          },
+          entering: {
             on: {
               ENTER_USER_INFO: {
                 actions: ['assignInputUserInfo'],
@@ -159,14 +237,7 @@ export const bookingMachine = createMachine<
               },
               NEXT: {
                 target: 'complete',
-                cond: (context) => {
-                  return (
-                    typeof context.input.userInfo !== 'undefined' &&
-                    context.input.userInfo.email.length > 0 &&
-                    context.input.userInfo.name.length > 0 &&
-                    context.input.userInfo.phone.length > 0
-                  )
-                },
+                cond: 'canTransitFromEnteringToCompleteOnEnteringUserInfo',
               },
               BACK: {
                 target: '#bookingMachine.selectingDateTime',
@@ -177,9 +248,7 @@ export const bookingMachine = createMachine<
             always: [
               {
                 target: 'confirmingCurrentUser',
-                cond: (context) => {
-                  return typeof context.data.user !== 'undefined'
-                },
+                cond: 'canTransitFromSigningInToConfirmingCurrentUserOnEnteringUserInfo',
               },
             ],
             on: {
@@ -192,9 +261,7 @@ export const bookingMachine = createMachine<
             on: {
               NEXT: {
                 target: 'complete',
-                cond: (context) => {
-                  return typeof context.data.user !== 'undefined'
-                },
+                cond: 'canTransitFromConfirmingCurrentUserOnEnteringUserInfo',
               },
               BACK: {
                 target: '#bookingMachine.selectingDateTime',
@@ -254,7 +321,17 @@ export const bookingMachine = createMachine<
   },
   {
     services: {
-      submit: async () => {},
+      submit,
+    },
+    guards: {
+      canTransitIdleToCompleteOnIdle,
+      canTransitFromSelectingToCompleteOnSelectingMenu,
+      canTransitFromSelectingToCompleteOnSelectingDateTime,
+      canTransitFromIdleToEnteringOnEnteringUserInfo,
+      canTransitFromIdleToConfirmingCurrentUserOnEnteringUserInfo,
+      canTransitFromEnteringToCompleteOnEnteringUserInfo,
+      canTransitFromSigningInToConfirmingCurrentUserOnEnteringUserInfo,
+      canTransitFromConfirmingCurrentUserOnEnteringUserInfo,
     },
     actions: {
       assignDataShop: assign((context, event) => {
@@ -325,7 +402,7 @@ export const bookingMachine = createMachine<
       assignError: assign((context, event: any) => {
         return {
           ...context,
-          error: event,
+          error: event.data,
         }
       }),
       clearError: assign((context) => {

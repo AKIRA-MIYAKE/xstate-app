@@ -2,6 +2,7 @@ import type { FC, ChangeEventHandler } from 'react'
 import { useCallback } from 'react'
 import { useActor } from '@xstate/react'
 
+import { canTransitFromSelectingToCompleteOnSelectingMenu } from '../../../../state-machines/booking-machine'
 import { useBookingServiceContext } from '../../../../contexts/BookingServiceContext'
 
 export const SelectMenuTemplate: FC = () => {
@@ -22,7 +23,7 @@ export const SelectMenuTemplate: FC = () => {
     },
     [send]
   )
-  console.log(state.transitions)
+
   const onNextButtonClick = useCallback(() => {
     send({ type: 'NEXT' })
   }, [send])
@@ -52,7 +53,14 @@ export const SelectMenuTemplate: FC = () => {
         })}
       </ul>
       <div>
-        <button onClick={onNextButtonClick}>Next</button>
+        <button
+          onClick={onNextButtonClick}
+          disabled={
+            !canTransitFromSelectingToCompleteOnSelectingMenu(state.context)
+          }
+        >
+          Next
+        </button>
       </div>
     </>
   )

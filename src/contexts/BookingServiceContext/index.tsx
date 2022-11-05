@@ -20,17 +20,7 @@ export const BookingServiceContext = createContext<BookingServiceContextValue>(
 export const BookingServiceContextProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const bookingService = useInterpret(
-    bookingMachine.withConfig({
-      services: {
-        submit: async (context) => {
-          console.log(context)
-          await sleep(1000)
-          return
-        },
-      },
-    })
-  )
+  const bookingService = useInterpret(bookingMachine)
 
   return (
     <BookingServiceContext.Provider value={{ bookingService }}>

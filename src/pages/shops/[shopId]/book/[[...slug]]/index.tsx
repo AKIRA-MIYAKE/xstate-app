@@ -111,7 +111,7 @@ const BookPage: NextPageWithLayout<PageProps> = ({ shopId, menuId }) => {
       }
 
       switch (state.value['enteringUserInfo']) {
-        case 'idle':
+        case 'entering':
           return <EnterUserInfoTemplate />
         case 'signingIn':
           return <SignInTemplate />

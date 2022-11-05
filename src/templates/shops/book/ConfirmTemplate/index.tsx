@@ -26,6 +26,10 @@ export const ConfirmTemplate: FC = () => {
 
   const menu = shop.menus.find((menu) => menu.id === menuId)
 
+  const email = userInfo?.email || (user?.email as string)
+  const name = userInfo?.name || (user?.name as string)
+  const phone = userInfo?.phone || (user?.phone as string)
+
   if (!menu) {
     throw new Error('Never')
   }
@@ -46,22 +50,14 @@ export const ConfirmTemplate: FC = () => {
         <div>
           <h2>User info</h2>
           <div>
-            {(() => {
-              const email = userInfo?.email || user?.email
-              const name = userInfo?.name || user?.name
-              const phone = userInfo?.phone || user?.phone
-
-              return (
-                <dl>
-                  <dt>Email</dt>
-                  <dd>{email}</dd>
-                  <dt>Name</dt>
-                  <dd>{name}</dd>
-                  <dt>Phone</dt>
-                  <dd>{phone}</dd>
-                </dl>
-              )
-            })()}
+            <dl>
+              <dt>Email</dt>
+              <dd>{email}</dd>
+              <dt>Name</dt>
+              <dd>{name}</dd>
+              <dt>Phone</dt>
+              <dd>{phone}</dd>
+            </dl>
           </div>
         </div>
       </div>
