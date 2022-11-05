@@ -54,6 +54,8 @@ export type BookingMachineEvent =
 export const submit: (context: BookingMachineContext) => Promise<void> = async (
   context
 ) => {
+  await sleep(1000)
+
   const dateTime = dayjs(context.input.dateTime)
 
   if (dateTime.isBefore(dayjs().add(1, 'days'))) {
@@ -283,6 +285,10 @@ export const bookingMachine = createMachine<
             on: {
               SUBMIT: {
                 target: 'submitting',
+                actions: ['clearError'],
+              },
+              BACK: {
+                target: '#bookingMachine.enteringUserInfo',
                 actions: ['clearError'],
               },
             },
